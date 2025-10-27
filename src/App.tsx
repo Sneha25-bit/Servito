@@ -17,7 +17,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
-          {/* ✅ Add your dashboard route here */}
+          {/*  Add your dashboard route here */}
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<SPDashboard />} />
           <Route path="/request" element={<ServiceRequestPage/>}/>

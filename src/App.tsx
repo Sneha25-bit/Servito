@@ -5,6 +5,8 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
+import ServiceRequestPage from "./pages/ServiceRequestPage";
+import SPDashboard from "./components/SPDashboard";
 
 const queryClient = new QueryClient();
 
@@ -15,8 +17,12 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <Routes>
+          {/*  Add your dashboard route here */}
           <Route path="/" element={<Index />} />
-          {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+          <Route path="/dashboard" element={<SPDashboard />} />
+          <Route path="/request" element={<ServiceRequestPage/>}/>
+
+          {/* Keep this catch-all route last */}
           <Route path="*" element={<NotFound />} />
         </Routes>
       </BrowserRouter>

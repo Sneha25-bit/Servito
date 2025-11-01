@@ -7,6 +7,8 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import ServiceRequestPage from "./pages/ServiceRequestPage";
 import SPDashboard from "./components/SPDashboard";
+import LoginPage from "./pages/LoginPage";
+import CustomerProfile from "./pages/CustomerProfile";
 
 const queryClient = new QueryClient();
 
@@ -21,6 +23,9 @@ const App = () => (
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<SPDashboard />} />
           <Route path="/request" element={<ServiceRequestPage/>}/>
+          <Route path="/login" element={<LoginPage/>}/>
+          <Route path="/profile" element={<CustomerProfile/>}/>
+
 
           {/* Keep this catch-all route last */}
           <Route path="*" element={<NotFound />} />

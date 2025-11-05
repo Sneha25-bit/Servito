@@ -1,5 +1,5 @@
 import { Mail, MapPin, Phone } from "lucide-react";
-
+import { Link } from "react-router-dom"; 
 const Footer = () => {
   const scrollToSection = (id: string) => {
     const element = document.getElementById(id);
@@ -89,6 +89,7 @@ const Footer = () => {
                 <MapPin className="h-5 w-5 mt-0.5 flex-shrink-0" />
                 <span>123 Service Street<br />San Francisco, CA 94102</span>
               </li>
+              
             </ul>
           </div>
         </div>
@@ -99,6 +100,7 @@ const Footer = () => {
             <p className="text-sm text-muted-foreground">
               © 2025 Servito. All rights reserved.
             </p>
+            
             <div className="flex gap-4">
               <a href="#" className="text-muted-foreground hover:text-primary transition-colors">
                 <span className="sr-only">Twitter</span>

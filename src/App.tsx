@@ -6,6 +6,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import SPDashboard from "./components/SPDashboard";
+import MyProfile from "./components/MyProfile";
 
 const queryClient = new QueryClient();
 
@@ -19,7 +20,7 @@ const App = () => (
           {/* ✅ Add your dashboard route here */}
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<SPDashboard />} />
-
+            <Route path="/myprofile" element={<MyProfile />} /> {/* 🟢 added new route */}
           {/* Keep this catch-all route last */}
           <Route path="*" element={<NotFound />} />
         </Routes>

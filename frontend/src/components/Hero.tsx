@@ -1,7 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { ArrowRight, UserPlus } from "lucide-react";
+import { useNavigate } from "react-router-dom"; 
 
 const Hero = () => {
+  const navigate = useNavigate(); 
   return (
     <section id="hero" className="relative pt-24 sm:pt-32 pb-16 sm:pb-24 overflow-hidden">
       {/* Background Gradient */}
@@ -32,6 +34,7 @@ const Hero = () => {
               <Button 
                 size="lg" 
                 className="text-base font-semibold shadow-lg hover:shadow-xl transition-all group"
+                onClick={() => navigate("/request")} 
               >
                 Post a Request
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />
@@ -40,8 +43,9 @@ const Hero = () => {
                 size="lg" 
                 variant="outline"
                 className="text-base font-semibold border-2 hover:bg-secondary hover:text-secondary-foreground hover:border-secondary transition-all"
-              >
-                <UserPlus className="mr-2 h-5 w-5" />
+            onClick={() => navigate("/dashboard")}
+            >
+                <UserPlus className="mr-2 h-5 w-5"  />
                 Join as a Provider
               </Button>
             </div>

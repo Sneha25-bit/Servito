@@ -1,8 +1,9 @@
 import { Button } from "@/components/ui/button";
 import { Menu } from "lucide-react";
 import { useState } from "react";
-
+import { useNavigate } from "react-router-dom"; // 🟢 added
 const Header = () => {
+   const navigate = useNavigate();//added
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const scrollToSection = (id: string) => {
@@ -18,7 +19,7 @@ const Header = () => {
       <div className="container mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16 sm:h-20">
           {/* Logo */}
-          <div className="flex-shrink-0">
+          <div className="flex-shrink-0 cursor-pointer "  onClick={() => navigate("/")} >
             <h1 className="text-2xl sm:text-3xl font-bold gradient-text">Servito</h1>
           </div>
 
@@ -52,11 +53,8 @@ const Header = () => {
 
           {/* Auth Buttons */}
           <div className="hidden md:flex items-center space-x-3">
-            <Button variant="ghost" className="font-medium">
+            <Button variant="ghost" className="font-medium" onClick={() => navigate("/login")}>
               Sign In
-            </Button>
-            <Button className="font-medium shadow-md hover:shadow-lg transition-shadow">
-              Sign Up
             </Button>
           </div>
 
@@ -100,9 +98,6 @@ const Header = () => {
               <div className="flex flex-col space-y-2 pt-2">
                 <Button variant="outline" className="w-full font-medium">
                   Sign In
-                </Button>
-                <Button className="w-full font-medium">
-                  Sign Up
                 </Button>
               </div>
             </div>

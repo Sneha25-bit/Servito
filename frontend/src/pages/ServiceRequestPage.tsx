@@ -1,9 +1,11 @@
 import React, { useState } from 'react';
+import axios from 'axios';
 import {
   Menu, X, User, Mail, Phone, MapPin, CheckCircle, Wrench, Home, Paintbrush, Zap
 } from 'lucide-react';
 import Footer from '../components/Footer';
 import Header from '@/components/Header';
+
 
 export default function ServiceRequestPage() {
   const [menuOpen, setMenuOpen] = useState(false);
@@ -22,8 +24,16 @@ export default function ServiceRequestPage() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = () => {
-    if (Object.values(formData).every((field) => field.trim() !== '')) {
+ const handleSubmit = async () => {
+  if (Object.values(formData).every((field) => field.trim() !== '')) {
+    try {
+      // Send data to backend
+      const response = await axios.post('http://localhost:5000/api/requests', formData);
+      alert(' Your request has been submitted successfully!');
+
+
+      console.log('Request submitted successfully:', response.data);
+
       setSubmitted(true);
       setTimeout(() => {
         setSubmitted(false);
@@ -35,9 +45,15 @@ export default function ServiceRequestPage() {
           address: '',
           description: ''
         });
-      }, 3000);
+      }, 8080);
+    } catch (err) {
+      console.error(' Error submitting request:', err);
+      alert('Something went wrong! Please try again.');
     }
-  };
+  } else {
+    alert('Please fill all the fields before submitting.');
+  }
+};
 
   const scrollToSection = (section: string) => {
     setActiveSection(section);

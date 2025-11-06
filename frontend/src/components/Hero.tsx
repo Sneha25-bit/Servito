@@ -34,7 +34,7 @@ const Hero = () => {
               <Button 
                 size="lg" 
                 className="text-base font-semibold shadow-lg hover:shadow-xl transition-all group"
-                onClick={() => navigate("/request")} 
+                onClick={() => navigate("/user")} 
               >
                 Post a Request
                 <ArrowRight className="ml-2 h-5 w-5 group-hover:translate-x-1 transition-transform" />

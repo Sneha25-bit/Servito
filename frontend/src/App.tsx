@@ -11,6 +11,7 @@ import LoginPage from "./pages/LoginPage";
 import CustomerProfile from "./pages/CustomerProfile";
 import { User } from "lucide-react";
 import MergedApp from "./pages/MergedApp";
+import ProfilePageSP from "./pages/ProfilePageSP";
 
 const queryClient = new QueryClient();
 
@@ -28,6 +29,7 @@ const App = () => (
           <Route path="/login" element={<LoginPage/>}/>
           <Route path="/profile" element={<CustomerProfile/>}/>
           <Route path="/user" element={<MergedApp/>}/>
+          <Route path="/sp-profile" element={<ProfilePageSP/>} />
 
 
           {/* Keep this catch-all route last */}

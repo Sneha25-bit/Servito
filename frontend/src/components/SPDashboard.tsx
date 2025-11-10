@@ -20,6 +20,8 @@ const SPDashboard = () => {
   const [requests, setRequests] = useState<any[]>([]);
   const [selectedRequest, setSelectedRequest] = useState<any | null>(null);
   const [showToast, setShowToast] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
+
 
   // Fetch data
   useEffect(() => {
@@ -68,7 +70,7 @@ const SPDashboard = () => {
       <header className="header">
         <div className="header-inner">
           <div className="header-left">
-            <Menu className="icon menu" />
+          <Menu className="icon menu cursor-pointer" onClick={() => setMenuOpen(!menuOpen)} />
             <h1 className="logo">ServitoBid</h1>
             <span className="subtitle">Service Provider Portal</span>
           </div>
@@ -77,10 +79,11 @@ const SPDashboard = () => {
               <Search className="icon search-icon" />
               <input type="text" placeholder="Search requests..." />
             </div>
-            <Bell className="icon bell" />
+          
+            <a href="/notifications"><Bell className="icon bell cursor-pointer text-blue-600" /></a>
             <div className="profile-mini">
               <div className="profile-avatar">
-                <User className="icon user" />
+                <a href="/sp-profile"><User className="icon user cursor-pointer text-blue-600" /></a>
               </div>
               <span className="profile-name">Service Provider</span>
             </div>
@@ -138,7 +141,7 @@ const SPDashboard = () => {
                       </div>
                       <span className="price">{req.status}</span>
                     </div>
-                    <p className="desc">{req.description}</p>
+                    <div className="desc-space"></div>
 
                     <div className="card-details">
                       <div>
@@ -220,6 +223,18 @@ const SPDashboard = () => {
           <span>Request Accepted Successfully!</span>
         </div>
       )}
+{menuOpen && (
+  <div className="sidebar">
+    <button className="close-sidebar" onClick={() => setMenuOpen(false)}>×</button>
+    <h3 className="sidebar-title">Quick Menu</h3>
+    <ul>
+      <li><a href="/">Home</a></li>
+      <li><a href="/features">Features</a></li>
+      <li><a href="/how-it-works">How It Works</a></li>
+      <li><a href="/contact">Contact Us</a></li>
+    </ul>
+  </div>
+)}
 
       {/* Styling */}
       <style>{`
@@ -366,6 +381,10 @@ const SPDashboard = () => {
     margin-bottom: 12px; 
     line-height: 1.5; 
   }
+    .desc-space {
+  height: 16px;
+}
+
   .card-details { 
     display: flex; 
     flex-direction: column; 
@@ -454,6 +473,53 @@ const SPDashboard = () => {
     from { opacity: 0; transform: translateY(10px); } 
     to { opacity: 1; transform: translateY(0); } 
   }
+
+  .sidebar {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 240px;
+  height: 100vh;
+  background: #ffffff;
+  box-shadow: 2px 0 10px rgba(0,0,0,0.1);
+  padding: 1.5rem;
+  z-index: 100;
+  animation: slideIn 0.3s ease;
+}
+@keyframes slideIn {
+  from { transform: translateX(-100%); opacity: 0; }
+  to { transform: translateX(0); opacity: 1; }
+}
+.sidebar-title {
+  font-weight: 600;
+  color: #1e3a8a;
+  margin-bottom: 1rem;
+}
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+.sidebar li {
+  margin: 12px 0;
+}
+.sidebar a {
+  color: #334155;
+  text-decoration: none;
+  font-weight: 500;
+}
+.sidebar a:hover {
+  color: #2563eb;
+}
+.close-sidebar {
+  position: absolute;
+  top: 10px;
+  right: 15px;
+  background: none;
+  border: none;
+  font-size: 1.5rem;
+  cursor: pointer;
+}
+
 `}</style>
 
     </div>

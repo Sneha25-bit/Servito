@@ -1,4 +1,4 @@
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
 import api from "../api/auth";
 import "../components/LoginPage.css";
@@ -26,6 +26,20 @@ export default function LoginPage() {
 
   const navigate = useNavigate();
 
+  // ✅ Reset signup fields when switching between Customer and Provider
+  useEffect(() => {
+    setUsername("");
+    setEmail("");
+    setPassword("");
+    setPhone("");
+    setAddress("");
+    setServiceInfo("");
+    setAadhar("");
+    setExperience("");
+    setDob("");
+    setEducation("");
+  }, [role]);
+
   // 🔹 Handle Sign In
   const handleSignIn = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
@@ -44,53 +58,71 @@ export default function LoginPage() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      if (loginRole === "customer") navigate("/profile");
-      else navigate("/dashboard");
+      navigate(loginRole === "customer" ? "/profile" : "/dashboard");
     } catch (err: any) {
       alert(err.response?.data?.message || "Login failed");
     }
   };
 
-  // 🔹 Handle Sign Up
-  const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+ // 🔹 Handle Sign Up
+const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
 
-    try {
-      const payload: any = {
-        role,
-        username,
-        email,
-        password,
-        phone_no: phone,
-        address,
-      };
+  // ✅ Basic validation before calling backend
+  if (!/^\d{10}$/.test(phone)) {
+    return alert("Phone number must be exactly 10 digits");
+  }
 
-      if (role === "provider") {
-        Object.assign(payload, {
-          service_info: serviceInfo,
-          aadhar_no: aadhar,
-          experience,
-          dob,
-          education,
-        });
-      }
+  if (role === "provider" && !/^\d{12}$/.test(aadhar)) {
+    return alert("Aadhar number must be exactly 12 digits");
+  }
 
-      const { data } = await api.post("/auth/signup", payload);
+  try {
+    const payload: any = {
+      username,
+      email,
+      password,
+      phone_no: phone,
+      address,
+    };
 
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      if (role === "customer") navigate("/profile");
-      else navigate("/dashboard");
-    } catch (err: any) {
-      alert(err.response?.data?.message || "Signup failed");
+    // Add provider-specific fields only if provider is selected
+    if (role === "provider") {
+      Object.assign(payload, {
+        service_info: serviceInfo,
+        aadhar_no: aadhar,
+        experience,
+        dob,
+        education,
+      });
     }
-  };
+
+    console.log("Signup payload:", payload);
+
+    // ✅ Send to correct backend route
+    const endpoint =
+      role === "customer"
+        ? "/auth/signup-customer"
+        : "/auth/signup-provider";
+
+    const { data } = await api.post(endpoint, payload);
+
+    // ✅ Save token and user info
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    // ✅ Redirect based on role
+    navigate(role === "customer" ? "/profile" : "/dashboard");
+  } catch (err: any) {
+    alert(err.response?.data?.message || "Signup failed");
+  }
+};
+
 
   return (
     <div className="auth-shell">
       <div className="card">
-        {/* Left: Sign In */}
+        {/* ================== LEFT: SIGN IN ================== */}
         <section className="panel left">
           <h1 className="title">Welcome Back</h1>
           <p className="subtitle">Sign in to your account</p>
@@ -154,7 +186,7 @@ export default function LoginPage() {
           </form>
         </section>
 
-        {/* Right: Sign Up */}
+        {/* ================== RIGHT: SIGN UP ================== */}
         <section className="panel right">
           <h1 className="title light">Create Account</h1>
           <p className="subtitle light">Join our community today</p>
@@ -179,6 +211,7 @@ export default function LoginPage() {
           <form className="form light" onSubmit={handleSignUp}>
             {role === "customer" ? (
               <>
+                {/* ===== CUSTOMER FIELDS ===== */}
                 <label className="input-group light">
                   <span className="input-label-text">Username</span>
                   <input
@@ -235,9 +268,9 @@ export default function LoginPage() {
               </>
             ) : (
               <>
-                {/* Provider fields */}
+                {/* ===== PROVIDER FIELDS ===== */}
                 <label className="input-group light">
-                  <span className="input-label-text">Name</span>
+                  <span className="input-label-text">Full Name</span>
                   <input
                     type="text"
                     required
@@ -302,7 +335,7 @@ export default function LoginPage() {
                 </label>
 
                 <label className="input-group light">
-                  <span className="input-label-text">Aadhar Card Number</span>
+                  <span className="input-label-text">Aadhar Number</span>
                   <input
                     type="text"
                     required
@@ -332,9 +365,7 @@ export default function LoginPage() {
                 </label>
 
                 <label className="input-group light">
-                  <span className="input-label-text">
-                    Education/Qualifications
-                  </span>
+                  <span className="input-label-text">Education / Qualification</span>
                   <textarea
                     className="input-field"
                     value={education}

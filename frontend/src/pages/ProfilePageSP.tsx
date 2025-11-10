@@ -1,39 +1,45 @@
 import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
 import api from "../api/auth";
 import {
-  User,
-  Star,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
   ArrowLeft,
   Edit3,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
   Briefcase,
   Award,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 export default function ProfilePageSP() {
   const [provider, setProvider] = useState<any>(null);
+  const navigate = useNavigate();
 
+  // ✅ Fetch provider profile on mount
   useEffect(() => {
     const fetchProfile = async () => {
       try {
         const token = localStorage.getItem("token");
+        if (!token) {
+          alert("Session expired. Please log in again.");
+          navigate("/login");
+          return;
+        }
         const { data } = await api.get("/provider/me", {
           headers: { Authorization: `Bearer ${token}` },
         });
         setProvider(data);
-      } catch (err: any) {
-        console.error(err);
-        alert("Failed to load profile");
+      } catch (err) {
+        console.error("Profile fetch error:", err);
+        alert("Failed to load profile details.");
       }
     };
     fetchProfile();
-  }, []);
+  }, [navigate]);
 
-  if (!provider) return <p className="p-10 text-center">Loading profile...</p>;
+  if (!provider)
+    return <p className="p-10 text-center text-gray-600">Loading profile...</p>;
 
   return (
     <div className="min-h-screen bg-gray-50 font-[Poppins]">
@@ -45,7 +51,12 @@ export default function ProfilePageSP() {
           </Link>
           <h2 className="text-xl font-semibold text-gray-800">My Profile</h2>
         </div>
-        <button className="hover:bg-blue-50 p-2 rounded-full transition">
+
+        {/* ✏️ Edit Button */}
+        <button
+          onClick={() => navigate("/provider/edit")}
+          className="hover:bg-blue-50 p-2 rounded-full transition"
+        >
           <Edit3 className="text-blue-600 cursor-pointer" />
         </button>
       </header>
@@ -53,20 +64,22 @@ export default function ProfilePageSP() {
       {/* ===== Main Section ===== */}
       <main className="max-w-4xl mx-auto py-10 px-6">
         <div className="bg-white rounded-2xl shadow-md p-8 flex flex-col items-center text-center hover:shadow-lg transition">
+          {/* Profile Avatar */}
           <img
-            src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${provider.name}`}
-            alt={provider.name}
+            src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${provider.username}`}
+            alt={provider.username}
             className="w-28 h-28 rounded-full border-4 border-blue-500 shadow-sm"
           />
 
-          {/* Name + Role */}
+          {/* Name + Service Info */}
           <h2 className="text-2xl font-bold text-gray-800 mt-4">
-            {provider.name}
+            {provider.username}
           </h2>
           <p className="text-blue-600 font-medium mt-1">
             {provider.service_info || "Service Provider"}
           </p>
 
+          {/* Contact Information */}
           <div className="w-full mt-8 text-left space-y-4">
             <div className="flex items-center gap-3 border-b pb-3">
               <Mail className="text-blue-500" size={20} />
@@ -74,7 +87,7 @@ export default function ProfilePageSP() {
             </div>
             <div className="flex items-center gap-3 border-b pb-3">
               <Phone className="text-blue-500" size={20} />
-              <p className="text-gray-700 font-medium">{provider.phone}</p>
+              <p className="text-gray-700 font-medium">{provider.phone_no}</p>
             </div>
             <div className="flex items-center gap-3 border-b pb-3">
               <MapPin className="text-blue-500" size={20} />
@@ -84,7 +97,7 @@ export default function ProfilePageSP() {
               <Calendar className="text-blue-500" size={20} />
               <p className="text-gray-700 font-medium">
                 Joined{" "}
-                {new Date(provider.joinedDate).toLocaleDateString("en-GB", {
+                {new Date(provider.createdAt).toLocaleDateString("en-GB", {
                   month: "long",
                   year: "numeric",
                 })}
@@ -97,13 +110,13 @@ export default function ProfilePageSP() {
             <div className="bg-blue-50 p-4 rounded-lg flex flex-col items-center">
               <Briefcase className="text-blue-600 mb-1" />
               <p className="text-gray-700 font-medium">
-                {provider.experience || "Experience not set"}
+                {provider.experience?.trim() || "Experience not set"}
               </p>
             </div>
             <div className="bg-blue-50 p-4 rounded-lg flex flex-col items-center">
               <Award className="text-blue-600 mb-1" />
               <p className="text-gray-700 font-medium">
-                {provider.education || "No Education Info"}
+                {provider.education?.trim() || "No Education Info"}
               </p>
             </div>
           </div>

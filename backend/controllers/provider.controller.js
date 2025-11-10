@@ -1,101 +1,92 @@
-import Customer from "../models/Customer.js";
 import SP from "../models/SP.js";
 
 /**
  * GET /api/provider/profile/:id
- * Public endpoint - fetch provider info by customer ID
+ * Public endpoint — fetch a provider’s public profile by their ID
  */
 export const getProviderProfile = async (req, res) => {
   try {
-    const { id } = req.params; // customer id
-    const customer = await Customer.findById(id).select("-password");
-    if (!customer)
+    const { id } = req.params;
+    const provider = await SP.findById(id).select("-password");
+    if (!provider) {
       return res.status(404).json({ message: "Provider not found" });
+    }
 
-    const sp = await SP.findOne({ customer: id });
-    if (!sp)
-      return res.status(404).json({ message: "Service Provider info missing" });
-
-    return res.json({
-      id: customer._id,
-      name: customer.username,
-      email: customer.email,
-      phone: customer.phone_no,
-      address: customer.address,
-      service_info: sp.service_info,
-      experience: sp.experience,
-      education: sp.education,
-      dob: sp.dob,
-      aadhar_no: sp.aadhar_no,
-      joinedDate: customer.createdAt,
+    res.status(200).json({
+      id: provider._id,
+      username: provider.username,
+      email: provider.email,
+      phone_no: provider.phone_no,
+      address: provider.address,
+      service_info: provider.service_info,
+      experience: provider.experience,
+      education: provider.education,
+      dob: provider.dob,
+      aadhar_no: provider.aadhar_no,
+      joinedDate: provider.createdAt,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching provider profile:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 /**
  * GET /api/provider/me
- * Private endpoint - uses JWT (req.user.id)
+ * Private endpoint — fetch the logged-in provider’s own profile
  */
 export const getMyProviderProfile = async (req, res) => {
   try {
-    const userId = req.user.id; // set by requireAuth middleware
-    const customer = await Customer.findById(userId).select("-password");
-    const sp = await SP.findOne({ customer: userId });
+    const userId = req.user.id; // Set by JWT middleware
+    const provider = await SP.findById(userId).select("-password");
 
-    if (!customer || !sp)
-      return res.status(404).json({ message: "Profile not found" });
+    if (!provider) {
+      return res.status(404).json({ message: "Provider not found" });
+    }
 
-    res.json({
-      id: customer._id,
-      name: customer.username,
-      email: customer.email,
-      phone: customer.phone_no,
-      address: customer.address,
-      service_info: sp.service_info,
-      experience: sp.experience,
-      education: sp.education,
-      dob: sp.dob,
-      aadhar_no: sp.aadhar_no,
-      joinedDate: customer.createdAt,
+    res.status(200).json({
+      id: provider._id,
+      username: provider.username,
+      email: provider.email,
+      phone_no: provider.phone_no,
+      address: provider.address,
+      service_info: provider.service_info,
+      experience: provider.experience,
+      education: provider.education,
+      dob: provider.dob,
+      aadhar_no: provider.aadhar_no,
+      joinedDate: provider.createdAt,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error fetching profile:", err);
     res.status(500).json({ message: "Server error" });
   }
 };
 
 /**
  * PUT /api/provider/update
- * Private endpoint - allows provider to update their details
+ * Private endpoint — update the logged-in provider’s profile
  */
 export const updateProviderProfile = async (req, res) => {
   try {
     const userId = req.user.id;
-    const { username, phone_no, address, service_info, experience, education } =
-      req.body;
+    const updates = req.body;
 
-    const customer = await Customer.findByIdAndUpdate(
-      userId,
-      { username, phone_no, address },
-      { new: true }
-    ).select("-password");
+    const updatedProvider = await SP.findByIdAndUpdate(userId, updates, {
+      new: true,
+      runValidators: true,
+    }).select("-password");
 
-    const sp = await SP.findOneAndUpdate(
-      { customer: userId },
-      { service_info, experience, education },
-      { new: true }
-    );
+    if (!updatedProvider) {
+      return res.status(404).json({ message: "Provider not found" });
+    }
 
-    res.json({
+    res.status(200).json({
       message: "Profile updated successfully",
-      customer,
-      sp,
+      provider: updatedProvider,
     });
   } catch (err) {
-    console.error(err);
+    console.error("Error updating provider profile:", err);
     res.status(500).json({ message: "Server error" });
   }
 };

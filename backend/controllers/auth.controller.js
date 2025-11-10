@@ -1,3 +1,4 @@
+import mongoose from "mongoose";
 import jwt from "jsonwebtoken";
 import Customer from "../models/Customer.js";
 import SP from "../models/SP.js";
@@ -12,36 +13,78 @@ const signToken = (payload) =>
  * - For 'provider': create Customer + SP (links to customer)
  */
 export const signup = async (req, res) => {
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
   try {
-    const { role, username, email, password, phone_no, address,
-      service_info, aadhar_no, experience, dob, education } = req.body;
+    const {
+      role,
+      username,
+      email,
+      password,
+      phone_no,
+      address,
+      service_info,
+      aadhar_no,
+      experience,
+      dob,
+      education,
+    } = req.body;
+
+    console.log("Signup payload:", req.body);
 
     if (!role || !["customer", "provider"].includes(role)) {
+      await session.abortTransaction();
       return res.status(400).json({ message: "Invalid role" });
     }
 
+    const normalizedEmail = email.toLowerCase().trim();
+
+    // Check for existing email
+    const existing = await Customer.findOne({ email: normalizedEmail }).session(session);
+    if (existing) {
+      await session.abortTransaction();
+      console.log('Existing: '+existing);
+      return res.status(409).json({ message: "Email already exists" });
+    }
+    console.log('Existing: '+existing);
     // Create base Customer
-    const customer = new Customer({ username, email, password, phone_no, address });
-    await customer.save();
+    const customer = new Customer({
+      username,
+      email: normalizedEmail,
+      password,
+      phone_no,
+      address,
+    });
+    await customer.save({ session });
 
     let payload = { id: customer._id.toString(), role: "customer" };
 
-    // If provider, create SP profile linked to this customer
+    // If provider, create linked SP document
     if (role === "provider") {
       if (!aadhar_no) {
-        return res.status(400).json({ message: "Aadhar is required for providers" });
+        await session.abortTransaction();
+        return res
+          .status(400)
+          .json({ message: "Aadhar number is required for providers" });
       }
+
       const sp = new SP({
         customer: customer._id,
         service_info,
         aadhar_no,
         experience,
-        dob,
-        education
+        dob: dob || null,
+        education,
       });
-      await sp.save();
+
+      await sp.save({ session });
       payload.role = "provider";
     }
+
+    // Commit both saves together
+    await session.commitTransaction();
+    session.endSession();
 
     const token = signToken(payload);
 
@@ -52,16 +95,20 @@ export const signup = async (req, res) => {
         id: payload.id,
         role: payload.role,
         username: customer.username,
-        email: customer.email
-      }
+        email: customer.email,
+      },
     });
   } catch (err) {
-    // Handle duplicate keys nicely
+    await session.abortTransaction();
+    session.endSession();
+
     if (err.code === 11000) {
+      console.log("Duplicate key pattern:", err.keyPattern);
       const field = Object.keys(err.keyPattern || {})[0] || "field";
       return res.status(409).json({ message: `${field} already exists` });
     }
-    console.error(err);
+
+    console.error("Signup error:", err);
     return res.status(500).json({ message: "Server error" });
   }
 };

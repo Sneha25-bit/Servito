@@ -51,12 +51,20 @@ const SPDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
+
   // 🔹 Update status to "In Progress" when accepted
   const handleAccept = async (requestId: string) => {
     try {
-      await axios.put(`http://localhost:5000/api/requests/${requestId}`, {
-        status: "In Progress",
-      });
+      const token = localStorage.getItem("token");
+      await axios.put(
+        `http://localhost:5000/api/requests/${requestId}`,
+        { status: "In Progress" },
+      {
+        headers: {
+          Authorization: `Bearer ${token}`, // ✅ include token
+    },
+  }
+);
 
       // Update UI immediately
       setRequests((prev) =>

@@ -6,8 +6,13 @@ const ServiceRequestSchema = new Schema(
     customer: {
       type: mongoose.Schema.Types.ObjectId,
       ref: 'Customer',
-      required: false,
+      required: true,
     },
+    sp: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'SP',
+      required: false,
+    }
     name: { type: String, required: true },
     email: { type: String, required: true },
     phone: { type: String, required: true },

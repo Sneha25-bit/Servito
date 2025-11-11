@@ -19,6 +19,12 @@ const ServiceRequestSchema = new Schema(
       enum: ['Pending', 'Accepted', 'In Progress', 'Completed'],
       default: 'Pending',
     },
+    rating: {
+      type: Number,
+      min: 0,
+      max: 5,
+      default: null, // or 0 if you want to default to 0
+    },
     createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }

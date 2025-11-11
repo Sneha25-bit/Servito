@@ -14,6 +14,18 @@ import {
   Star,
 } from "lucide-react";
 
+interface Booking {
+  _id: string;
+  serviceType: string;
+  name: string;
+  email: string;
+  phone: string;
+  address: string;
+  description: string;
+  status: string;
+  createdAt: string;
+}
+
 export default function EditableCustomerProfile() {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -47,45 +59,36 @@ export default function EditableCustomerProfile() {
     };
 
     const fetchBookings = async () => {
-      // Replace with actual backend endpoint
-      setBookingHistory([
-        {
-          id: 1,
-          serviceName: "Kitchen Sink Repair",
-          providerName: "Rajesh Kumar",
-          category: "Plumbing",
-          date: "2025-10-28",
-          time: "10:30 AM",
-          status: "completed",
-          amount: "₹800",
-          rating: 5,
-          address: "Katargam, Surat",
-        },
-        {
-          id: 2,
-          serviceName: "AC Servicing",
-          providerName: "Suresh Patel",
-          category: "Appliance Repair",
-          date: "2025-10-30",
-          time: "02:00 PM",
-          status: "pending",
-          amount: "₹1,500",
-          rating: null,
-          address: "Katargam, Surat",
-        },
-        {
-          id: 3,
-          serviceName: "House Cleaning",
-          providerName: "Mina Desai",
-          category: "Cleaning",
-          date: "2025-10-24",
-          time: "09:00 AM",
-          status: "completed",
-          amount: "₹1,200",
-          rating: 4,
-          address: "Katargam, Surat",
-        },
-      ]);
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          alert("Please log in to view your bookings.");
+          return;
+        }
+
+        const res = await axios.get("http://localhost:5000/api/requests/my-requests", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+
+        // Map the backend response to your frontend structure if needed
+        const formatted = res.data.data.map((req: any, index: number) => ({
+          id: req._id,
+          serviceName: req.serviceType,
+          providerName: req.providerName || "Assigned soon",
+          category: req.serviceType,
+          date: new Date(req.createdAt).toLocaleDateString(),
+          time: new Date(req.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          status: req.status,
+          amount: req.amount || "—",
+          rating: req.rating ?? null,
+          address: req.address,
+        }));
+
+        setBookingHistory(formatted);
+      } catch (err) {
+        console.error(" Error fetching bookings:", err);
+        alert("Failed to load booking history.");
+      }
     };
 
     fetchProfile();

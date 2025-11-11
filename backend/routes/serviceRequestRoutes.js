@@ -94,4 +94,18 @@ router.put("/:id", requireAuth, async (req, res) => {
   }
 });
 
+//  Get logged-in customer's service requests
+router.get("/my-requests", requireAuth, async (req, res) => {
+  try {
+    const requests = await ServiceRequest.find({ customer: req.user.id })
+      .populate("customer", "username email phone_no")
+      .sort({ createdAt: -1 });
+
+    res.status(200).json({ success: true, data: requests });
+  } catch (error) {
+    console.error(" Error fetching customer requests:", error);
+    res.status(500).json({ success: false, message: "Server error" });
+  }
+});
+
 export default router;

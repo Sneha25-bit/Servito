@@ -1,31 +1,81 @@
-import React from "react";
+import { useEffect, useState } from "react";
+import { Link, useNavigate } from "react-router-dom";
+import api from "../api/auth";
 import {
-  User,
-  Star,
-  Phone,
-  Mail,
-  MapPin,
-  Calendar,
   ArrowLeft,
   Edit3,
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
   Briefcase,
   Award,
 } from "lucide-react";
-import { Link } from "react-router-dom";
 
 export default function ProfilePageSP() {
-  // Dummy SP data
-  const provider = {
-    name: "Rajesh Kumar",
-    email: "rajesh.k@servito.com",
-    phone: "+91 9876543210",
-    address: "Varachha, Surat, Gujarat",
-    serviceType: "Electrician",
-    joinedDate: "January 2024",
-    totalRequests: 56,
-    completed: 49,
-    rating: 4.7,
-    profileImage: "https://api.dicebear.com/7.x/adventurer/svg?seed=Rajesh",
+  const [provider, setProvider] = useState<any>(null);
+  const [editing, setEditing] = useState(false);
+  const [formData, setFormData] = useState<any>({});
+  const navigate = useNavigate();
+
+  // Fetch provider profile on mount
+  useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        if (!token) {
+          alert("Session expired. Please log in again.");
+          navigate("/login");
+          return;
+        }
+        const { data } = await api.get("/provider/me", {
+          headers: { Authorization: `Bearer ${token}` },
+        });
+        setProvider(data);
+        setFormData({
+          username: data.username || "",
+          phone_no: data.phone_no || "",
+          address: data.address || "",
+          service_info: data.service_info || "",
+          experience: data.experience || "",
+          education: data.education || "",
+          dob: data.dob ? new Date(data.dob).toISOString().split("T")[0] : "",
+        });
+      } catch (err) {
+        console.error("Profile fetch error:", err);
+        alert("Failed to load profile details.");
+      }
+    };
+    fetchProfile();
+  }, [navigate]);
+
+  if (!provider)
+    return <p className="p-10 text-center text-gray-600">Loading profile...</p>;
+
+  // Handle input change
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+    setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  // Save updates
+  const handleSave = async () => {
+    try {
+      const token = localStorage.getItem("token");
+      if (!token) return alert("Session expired. Please login again.");
+
+      const payload = { ...formData };
+
+      const { data } = await api.put("/provider/update", payload, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+
+      setProvider(data.provider);
+      setEditing(false);
+      alert("Profile updated successfully!");
+    } catch (err) {
+      console.error("Update error:", err.response || err);
+      alert("Failed to update profile.");
+    }
   };
 
   return (
@@ -38,108 +88,152 @@ export default function ProfilePageSP() {
           </Link>
           <h2 className="text-xl font-semibold text-gray-800">My Profile</h2>
         </div>
-        <button className="hover:bg-blue-50 p-2 rounded-full transition">
-          <Edit3 className="text-blue-600 cursor-pointer" />
+
+        {/* ✏️ Edit/Save Button */}
+        <button
+          onClick={editing ? handleSave : () => setEditing(true)}
+          className="hover:bg-blue-50 p-2 rounded-full transition"
+        >
+          {editing ? "💾" : <Edit3 className="text-blue-600 cursor-pointer" />}
         </button>
       </header>
 
       {/* ===== Main Section ===== */}
       <main className="max-w-4xl mx-auto py-10 px-6">
         <div className="bg-white rounded-2xl shadow-md p-8 flex flex-col items-center text-center hover:shadow-lg transition">
-          {/* Profile Image */}
-          <div className="relative">
-            <img
-              src={provider.profileImage}
-              alt={provider.name}
-              className="w-28 h-28 rounded-full border-4 border-blue-500 shadow-sm"
+          {/* Profile Avatar */}
+          <img
+            src={`https://api.dicebear.com/7.x/adventurer/svg?seed=${provider.username}`}
+            alt={provider.username}
+            className="w-28 h-28 rounded-full border-4 border-blue-500 shadow-sm"
+          />
+
+          {/* Name + Service Info */}
+          {editing ? (
+            <input
+              type="text"
+              name="username"
+              value={formData.username}
+              onChange={handleChange}
+              className="border rounded px-2 py-1 mt-4 w-64 text-center font-bold text-gray-800"
             />
-            <div className="absolute -bottom-1 -right-1 bg-blue-600 text-white rounded-full p-1 shadow">
-              <User size={16} />
-            </div>
-          </div>
+          ) : (
+            <h2 className="text-2xl font-bold text-gray-800 mt-4">{provider.username}</h2>
+          )}
 
-          {/* Name + Role */}
-          <h2 className="text-2xl font-bold text-gray-800 mt-4">
-            {provider.name}
-          </h2>
-          <p className="text-blue-600 font-medium mt-1">
-            {provider.serviceType} Specialist
-          </p>
+          {editing ? (
+            <input
+              type="text"
+              name="service_info"
+              value={formData.service_info}
+              onChange={handleChange}
+              className="border rounded px-2 py-1 mt-1 w-64 text-center text-blue-600 font-medium"
+            />
+          ) : (
+            <p className="text-blue-600 font-medium mt-1">
+              {provider.service_info || "Service Provider"}
+            </p>
+          )}
 
-          {/* Ratings */}
-          <div className="flex items-center justify-center gap-1 mt-2">
-            {[...Array(5)].map((_, i) => (
-              <Star
-                key={i}
-                className={`w-5 h-5 ${
-                  i < Math.round(provider.rating)
-                    ? "fill-yellow-400 text-yellow-400"
-                    : "text-gray-300"
-                }`}
-              />
-            ))}
-            <span className="ml-2 text-gray-700 font-medium">
-              {provider.rating}/5
-            </span>
-          </div>
-
-          {/* Stats Section */}
-          <div className="grid grid-cols-3 gap-6 mt-8 w-full text-center border-t pt-6">
-            <div>
-              <p className="text-2xl font-bold text-blue-600">
-                {provider.totalRequests}
-              </p>
-              <p className="text-gray-600 text-sm">Total Requests</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-green-600">
-                {provider.completed}
-              </p>
-              <p className="text-gray-600 text-sm">Completed Jobs</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold text-yellow-500">
-                {provider.rating.toFixed(1)}
-              </p>
-              <p className="text-gray-600 text-sm">Overall Rating</p>
-            </div>
-          </div>
-
-          {/* Contact Info */}
+          {/* Contact Information */}
           <div className="w-full mt-8 text-left space-y-4">
+            {/* Email (readonly) */}
             <div className="flex items-center gap-3 border-b pb-3">
               <Mail className="text-blue-500" size={20} />
               <p className="text-gray-700 font-medium">{provider.email}</p>
             </div>
+
+            {/* Phone */}
             <div className="flex items-center gap-3 border-b pb-3">
               <Phone className="text-blue-500" size={20} />
-              <p className="text-gray-700 font-medium">{provider.phone}</p>
+              {editing ? (
+                <input
+                  type="text"
+                  name="phone_no"
+                  value={formData.phone_no}
+                  onChange={handleChange}
+                  className="border rounded px-2 py-1 w-full"
+                />
+              ) : (
+                <p className="text-gray-700 font-medium">{provider.phone_no}</p>
+              )}
             </div>
+
+            {/* Address */}
             <div className="flex items-center gap-3 border-b pb-3">
               <MapPin className="text-blue-500" size={20} />
-              <p className="text-gray-700 font-medium">{provider.address}</p>
+              {editing ? (
+                <input
+                  type="text"
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  className="border rounded px-2 py-1 w-full"
+                />
+              ) : (
+                <p className="text-gray-700 font-medium">{provider.address}</p>
+              )}
             </div>
+
+            {/* DOB */}
             <div className="flex items-center gap-3 border-b pb-3">
               <Calendar className="text-blue-500" size={20} />
-              <p className="text-gray-700 font-medium">
-                Joined {provider.joinedDate}
-              </p>
+              {editing ? (
+                <input
+                  type="date"
+                  name="dob"
+                  value={formData.dob}
+                  onChange={handleChange}
+                  className="border rounded px-2 py-1 w-full"
+                />
+              ) : (
+                <p className="text-gray-700 font-medium">
+                  Joined{" "}
+                  {new Date(provider.joinedDate).toLocaleDateString("en-GB", {
+                    month: "long",
+                    year: "numeric",
+                  })}
+                </p>
+              )}
             </div>
           </div>
 
           {/* Highlights / Achievements */}
           <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 mt-8 w-full">
+            {/* Experience */}
             <div className="bg-blue-50 p-4 rounded-lg flex flex-col items-center">
               <Briefcase className="text-blue-600 mb-1" />
-              <p className="text-gray-700 font-medium">5+ Years Experience</p>
+              {editing ? (
+                <input
+                  type="text"
+                  name="experience"
+                  value={formData.experience}
+                  onChange={handleChange}
+                  className="border rounded px-2 py-1 w-full text-center"
+                />
+              ) : (
+                <p className="text-gray-700 font-medium">
+                  {provider.experience?.trim() || "Experience not set"}
+                </p>
+              )}
             </div>
+
+            {/* Education */}
             <div className="bg-blue-50 p-4 rounded-lg flex flex-col items-center">
               <Award className="text-blue-600 mb-1" />
-              <p className="text-gray-700 font-medium">Certified Professional</p>
-            </div>
-            <div className="bg-blue-50 p-4 rounded-lg flex flex-col items-center">
-              <Star className="text-blue-600 mb-1" />
-              <p className="text-gray-700 font-medium">Top Rated on Servito</p>
+              {editing ? (
+                <input
+                  type="text"
+                  name="education"
+                  value={formData.education}
+                  onChange={handleChange}
+                  className="border rounded px-2 py-1 w-full text-center"
+                />
+              ) : (
+                <p className="text-gray-700 font-medium">
+                  {provider.education?.trim() || "No Education Info"}
+                </p>
+              )}
             </div>
           </div>
         </div>

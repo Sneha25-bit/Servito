@@ -10,6 +10,9 @@ interface DecodedToken {
   exp: number;
 }
 
+
+
+
 const Header = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -38,6 +41,12 @@ const Header = () => {
       element.scrollIntoView({ behavior: "smooth" });
       setMobileMenuOpen(false);
     }
+  };
+
+  const handleLogout = () => {
+  localStorage.removeItem("token"); 
+  setIsLoggedIn(false);           
+  navigate("/login");               
   };
 
   return (
@@ -87,14 +96,21 @@ const Header = () => {
               >
                 Sign In
               </Button>
-            ) : (
-              <button
-                onClick={() => navigate("/profile")}
-                className="p-2 rounded-full hover:bg-muted transition"
-              >
-                <User className="h-6 w-6 text-primary" />
-              </button>
-            )}
+            ) : (<>
+                  <button
+                      onClick={() => navigate("/profile")}
+                      className="p-2 rounded-full hover:bg-muted transition"
+                  >
+                    <User className="h-6 w-6 text-primary" />
+                  </button>
+                  <Button
+                    variant="ghost"
+                    className="font-medium"
+                    onClick={handleLogout}
+                  >
+                  Logout
+                  </Button>
+            </>)}
           </div>
 
           {/* Mobile Menu Button */}

@@ -20,7 +20,7 @@ const App = () => (
           {/* ✅ Add your dashboard route here */}
           <Route path="/" element={<Index />} />
           <Route path="/dashboard" element={<SPDashboard />} />
-            <Route path="/myprofile" element={<MyProfile />} /> {/* 🟢 added new route */}
+          <Route path="/myprofile" element={<MyProfile />} /> {/* 🟢 added new route */}
           {/* Keep this catch-all route last */}
           <Route path="*" element={<NotFound />} />
         </Routes>

@@ -1,45 +1,128 @@
-import { useState, FormEvent } from "react";
+import { useState, useEffect, FormEvent } from "react";
 import { useNavigate } from "react-router-dom";
+import api from "../api/auth";
 import "../components/LoginPage.css";
 
 export default function LoginPage() {
   const [role, setRole] = useState<"customer" | "provider">("customer");
   const [loginRole, setLoginRole] = useState<"customer" | "provider" | "">("");
+
+  // Signin states
+  const [signinEmail, setSigninEmail] = useState("");
+  const [signinPassword, setSigninPassword] = useState("");
+  const [signinConfirm, setSigninConfirm] = useState("");
+
+  // Signup states
+  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [phone, setPhone] = useState("");
+  const [address, setAddress] = useState("");
+  const [serviceInfo, setServiceInfo] = useState("");
+  const [aadhar, setAadhar] = useState("");
+  const [experience, setExperience] = useState("");
+  const [dob, setDob] = useState<string>("");
+  const [education, setEducation] = useState("");
+
   const navigate = useNavigate();
 
-  // Handle Sign In (Left Panel)
-  const handleSignIn = (e: FormEvent<HTMLFormElement>) => {
+  // ✅ Reset signup fields when switching between Customer and Provider
+  useEffect(() => {
+    setUsername("");
+    setEmail("");
+    setPassword("");
+    setPhone("");
+    setAddress("");
+    setServiceInfo("");
+    setAadhar("");
+    setExperience("");
+    setDob("");
+    setEducation("");
+  }, [role]);
+
+  // 🔹 Handle Sign In
+  const handleSignIn = async (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
 
-    if (!loginRole) {
-      alert("Please select your role before signing in.");
-      return;
-    }
+    if (!loginRole) return alert("Please select your role before signing in.");
+    if (signinPassword !== signinConfirm)
+      return alert("Passwords do not match.");
 
-    // Navigate based on loginRole
-    if (loginRole === "customer") {
-      navigate("/profile");
-    } else {
-      navigate("/dashboard");
+    try {
+      const { data } = await api.post("/auth/login", {
+        email: signinEmail,
+        password: signinPassword,
+        loginRole,
+      });
+
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("user", JSON.stringify(data.user));
+
+      navigate(loginRole === "customer" ? "/profile" : "/dashboard");
+    } catch (err: any) {
+      alert(err.response?.data?.message || "Login failed");
     }
   };
 
-  // Handle Sign Up (Right Panel)
-  const handleSignUp = (e: FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+ // 🔹 Handle Sign Up
+const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
+  e.preventDefault();
 
-    // Navigate based on selected signup role
-    if (role === "customer") {
-      navigate("/profile");
-    } else {
-      navigate("/dashboard");
+  // ✅ Basic validation before calling backend
+  if (!/^\d{10}$/.test(phone)) {
+    return alert("Phone number must be exactly 10 digits");
+  }
+
+  if (role === "provider" && !/^\d{12}$/.test(aadhar)) {
+    return alert("Aadhar number must be exactly 12 digits");
+  }
+
+  try {
+    const payload: any = {
+      username,
+      email,
+      password,
+      phone_no: phone,
+      address,
+    };
+
+    // Add provider-specific fields only if provider is selected
+    if (role === "provider") {
+      Object.assign(payload, {
+        service_info: serviceInfo,
+        aadhar_no: aadhar,
+        experience,
+        dob,
+        education,
+      });
     }
-  };
+
+    console.log("Signup payload:", payload);
+
+    // ✅ Send to correct backend route
+    const endpoint =
+      role === "customer"
+        ? "/auth/signup-customer"
+        : "/auth/signup-provider";
+
+    const { data } = await api.post(endpoint, payload);
+
+    // ✅ Save token and user info
+    localStorage.setItem("token", data.token);
+    localStorage.setItem("user", JSON.stringify(data.user));
+
+    // ✅ Redirect based on role
+    navigate(role === "customer" ? "/profile" : "/dashboard");
+  } catch (err: any) {
+    alert(err.response?.data?.message || "Signup failed");
+  }
+};
+
 
   return (
     <div className="auth-shell">
       <div className="card">
-        {/* Left: Sign In */}
+        {/* ================== LEFT: SIGN IN ================== */}
         <section className="panel left">
           <h1 className="title">Welcome Back</h1>
           <p className="subtitle">Sign in to your account</p>
@@ -52,6 +135,8 @@ export default function LoginPage() {
                 placeholder="Enter email"
                 required
                 className="input-field"
+                value={signinEmail}
+                onChange={(e) => setSigninEmail(e.target.value)}
               />
             </label>
 
@@ -62,6 +147,8 @@ export default function LoginPage() {
                 placeholder="Enter password"
                 required
                 className="input-field"
+                value={signinPassword}
+                onChange={(e) => setSigninPassword(e.target.value)}
               />
             </label>
 
@@ -72,10 +159,11 @@ export default function LoginPage() {
                 placeholder="Confirm password"
                 required
                 className="input-field"
+                value={signinConfirm}
+                onChange={(e) => setSigninConfirm(e.target.value)}
               />
             </label>
 
-            {/* NEW FIELD: Choose Login Role */}
             <label className="input-group">
               <span className="input-label-text">Login as</span>
               <select
@@ -92,23 +180,13 @@ export default function LoginPage() {
               </select>
             </label>
 
-            <div className="row between">
-              <label className="checkbox">
-                <input type="checkbox" />
-                <span>Remember me</span>
-              </label>
-              <button className="link" type="button">
-                Forgot Password?
-              </button>
-            </div>
-
             <button className="btn primary full" type="submit">
               Sign In
             </button>
           </form>
         </section>
 
-        {/* Right: Sign Up (Role-Based Form) */}
+        {/* ================== RIGHT: SIGN UP ================== */}
         <section className="panel right">
           <h1 className="title light">Create Account</h1>
           <p className="subtitle light">Join our community today</p>
@@ -133,13 +211,15 @@ export default function LoginPage() {
           <form className="form light" onSubmit={handleSignUp}>
             {role === "customer" ? (
               <>
+                {/* ===== CUSTOMER FIELDS ===== */}
                 <label className="input-group light">
                   <span className="input-label-text">Username</span>
                   <input
                     type="text"
-                    placeholder="Enter username"
                     required
                     className="input-field"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
                 </label>
 
@@ -147,9 +227,10 @@ export default function LoginPage() {
                   <span className="input-label-text">Email</span>
                   <input
                     type="email"
-                    placeholder="Enter email address"
                     required
                     className="input-field"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </label>
 
@@ -157,9 +238,10 @@ export default function LoginPage() {
                   <span className="input-label-text">Password</span>
                   <input
                     type="password"
-                    placeholder="Create password"
                     required
                     className="input-field"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
                 </label>
 
@@ -167,30 +249,34 @@ export default function LoginPage() {
                   <span className="input-label-text">Phone Number</span>
                   <input
                     type="tel"
-                    placeholder="Enter phone number"
                     required
                     className="input-field"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                   />
                 </label>
 
                 <label className="input-group light">
                   <span className="input-label-text">Address</span>
                   <textarea
-                    placeholder="Enter full address details"
                     required
                     className="input-field"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
                   />
                 </label>
               </>
             ) : (
               <>
+                {/* ===== PROVIDER FIELDS ===== */}
                 <label className="input-group light">
-                  <span className="input-label-text">Name</span>
+                  <span className="input-label-text">Full Name</span>
                   <input
                     type="text"
-                    placeholder="Enter full name"
                     required
                     className="input-field"
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                   />
                 </label>
 
@@ -198,9 +284,10 @@ export default function LoginPage() {
                   <span className="input-label-text">Email Address</span>
                   <input
                     type="email"
-                    placeholder="Enter email address"
                     required
                     className="input-field"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                   />
                 </label>
 
@@ -208,9 +295,10 @@ export default function LoginPage() {
                   <span className="input-label-text">Password</span>
                   <input
                     type="password"
-                    placeholder="Create password"
                     required
                     className="input-field"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
                   />
                 </label>
 
@@ -218,18 +306,20 @@ export default function LoginPage() {
                   <span className="input-label-text">Contact Number</span>
                   <input
                     type="tel"
-                    placeholder="Enter contact number"
                     required
                     className="input-field"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
                   />
                 </label>
 
                 <label className="input-group light">
                   <span className="input-label-text">Address</span>
                   <textarea
-                    placeholder="Enter full address details"
                     required
                     className="input-field"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
                   />
                 </label>
 
@@ -237,44 +327,49 @@ export default function LoginPage() {
                   <span className="input-label-text">Service Information</span>
                   <input
                     type="text"
-                    placeholder="e.g., Plumber, Electrician"
                     required
                     className="input-field"
+                    value={serviceInfo}
+                    onChange={(e) => setServiceInfo(e.target.value)}
                   />
                 </label>
 
                 <label className="input-group light">
-                  <span className="input-label-text">Aadhar Card Number</span>
+                  <span className="input-label-text">Aadhar Number</span>
                   <input
                     type="text"
-                    placeholder="Enter Aadhar card number"
                     required
                     className="input-field"
+                    value={aadhar}
+                    onChange={(e) => setAadhar(e.target.value)}
                   />
                 </label>
 
                 <label className="input-group light">
                   <span className="input-label-text">Experience</span>
                   <textarea
-                    placeholder="Detailed history and skills"
-                    required
                     className="input-field"
+                    value={experience}
+                    onChange={(e) => setExperience(e.target.value)}
                   />
                 </label>
 
                 <label className="input-group light">
                   <span className="input-label-text">Date of Birth</span>
-                  <input type="date" required className="input-field" />
+                  <input
+                    type="date"
+                    className="input-field"
+                    value={dob}
+                    onChange={(e) => setDob(e.target.value)}
+                  />
                 </label>
 
                 <label className="input-group light">
-                  <span className="input-label-text">
-                    Education/Qualifications
-                  </span>
+                  <span className="input-label-text">Education / Qualification</span>
                   <textarea
-                    placeholder="Degrees, Certifications, etc."
-                    required
                     className="input-field"
+                    value={education}
+                    onChange={(e) => setEducation(e.target.value)}
                   />
                 </label>
               </>

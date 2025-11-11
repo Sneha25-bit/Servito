@@ -39,11 +39,23 @@ const SPDashboard = () => {
     return () => clearInterval(interval);
   }, []);
 
-  const handleAccept = (requestId: string) => {
-    console.log("Accepted request ID:", requestId);
+  const handleAccept = async (requestId) => {
+  try {
+    const res = await axios.put(`http://localhost:5000/api/requests/${requestId}`, {
+      status: 'Accepted',
+    });
+
+    // Update UI immediately
+    setRequests((prev) =>
+      prev.map((r) => (r._id === requestId ? { ...r, status: 'Accepted' } : r))
+    );
+
     setShowToast(true);
     setTimeout(() => setShowToast(false), 2500);
-  };
+  } catch (err) {
+    console.error('Error accepting request:', err);
+  }
+};
 
   const categories = [
     "All",

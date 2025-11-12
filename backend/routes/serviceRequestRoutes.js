@@ -23,7 +23,7 @@ router.post("/", requireAuth, async (req, res) => {
       serviceType,
       address,
       description,
-      budget, // 💰 added
+      budget, 
     });
 
     await newRequest.save();

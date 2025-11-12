@@ -10,9 +10,10 @@ import {
   Calendar,
   Clock,
   CheckCircle,
-  XCircle,
+  Loader,
   Star,
 } from "lucide-react";
+import Login from "@/components/Login";
 
 interface Booking {
   id: string;
@@ -37,8 +38,6 @@ interface Profile {
   budget: number;
 }
 
-import Login from "@/components/Login";
-
 export default function EditableCustomerProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -47,11 +46,11 @@ export default function EditableCustomerProfile() {
   const [bookingHistory, setBookingHistory] = useState<Booking[]>([]);
   const [activeTab, setActiveTab] = useState("all");
 
-  // Fetch profile and bookings
   useEffect(() => {
+    const token = localStorage.getItem("token");
+
     const fetchProfile = async () => {
       try {
-        const token = localStorage.getItem("token");
         const res = await axios.get("http://localhost:5000/api/customer/profile", {
           headers: { Authorization: `Bearer ${token}` },
         });
@@ -74,32 +73,21 @@ export default function EditableCustomerProfile() {
 
     const fetchBookings = async () => {
       try {
-        const token = localStorage.getItem("token");
-        if (!token) {
-          alert("Please log in to view your bookings.");
-          return;
-        }
-
         const res = await axios.get("http://localhost:5000/api/requests/my-requests", {
           headers: { Authorization: `Bearer ${token}` },
         });
-
         const formatted = res.data.data.map((req: any) => ({
           id: req._id,
           serviceName: req.serviceType,
           providerName: req.providerName || "Assigned soon",
           category: req.serviceType,
           date: new Date(req.createdAt).toLocaleDateString(),
-          time: new Date(req.createdAt).toLocaleTimeString([], {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
+          time: new Date(req.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
           status: req.status,
           amount: req.amount || "—",
           rating: req.rating ?? null,
           address: req.address,
         }));
-
         setBookingHistory(formatted);
       } catch (err) {
         console.error("Error fetching bookings:", err);
@@ -110,6 +98,27 @@ export default function EditableCustomerProfile() {
     fetchProfile();
     fetchBookings();
   }, []);
+
+  const markCompleted = async (bookingId: string) => {
+  try {
+    const token = localStorage.getItem("token");
+    await axios.put(
+      `http://localhost:5000/api/requests/${bookingId}`,
+      { status: "Completed" }, // status change
+      { headers: { Authorization: `Bearer ${token}` } }
+    );
+
+    setBookingHistory((prev) =>
+      prev.map((b) =>
+        b.id === bookingId ? { ...b, status: "Completed" } : b
+      )
+    );
+  } catch (err) {
+    console.error("Error updating booking status:", err);
+  }
+};
+
+
 
   if (loading) return <p className="text-gray-500">Loading profile...</p>;
   if (!profile) return <p className="text-red-500">Failed to load profile</p>;
@@ -122,15 +131,12 @@ export default function EditableCustomerProfile() {
   const handleSave = async () => {
     try {
       const token = localStorage.getItem("token");
-
       await axios.put("http://localhost:5000/api/customer/profile", formData, {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       const res = await axios.get("http://localhost:5000/api/customer/profile", {
         headers: { Authorization: `Bearer ${token}` },
       });
-
       setProfile(res.data);
       setFormData({
         username: res.data.username || "",
@@ -141,10 +147,23 @@ export default function EditableCustomerProfile() {
         profileImage: res.data.profileImage || "",
         budget: res.data.budget || 0,
       });
-
       setEditing(false);
     } catch (err) {
       console.error("Error updating profile:", err);
+    }
+  };
+
+  const updateBookingStatus = async (bookingId: string) => {
+    try {
+      const token = localStorage.getItem("token");
+      await axios.put(`http://localhost:5000/api/requests/${bookingId}`, { status: "Completed" }, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      setBookingHistory((prev) =>
+        prev.map((b) => (b.id === bookingId ? { ...b, status: "Completed" } : b))
+      );
+    } catch (err) {
+      console.error("Error updating booking status:", err);
     }
   };
 
@@ -155,27 +174,19 @@ export default function EditableCustomerProfile() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Completed":
-        return "bg-green-100 text-green-700";
-      case "Pending":
-        return "bg-yellow-100 text-yellow-700";
-      case "In progress":
-        return "bg-red-100 text-red-700";
-      default:
-        return "bg-gray-100 text-gray-700";
+      case "Completed": return "bg-green-100 text-green-700";
+      case "Pending": return "bg-yellow-100 text-yellow-700";
+      case "In Progress": return "bg-gray-100 text-gray-700";
+      default: return "bg-green-100 text-green-700";
     }
   };
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "Completed":
-        return <CheckCircle className="w-4 h-4" />;
-      case "Pending":
-        return <Clock className="w-4 h-4" />;
-      case "In Progress":
-        return <XCircle className="w-4 h-4" />;
-      default:
-        return null;
+      case "Completed": return <CheckCircle className="w-4 h-4" />;
+      case "Pending": return <Clock className="w-4 h-4" />;
+      case "In Progress": return <Loader className="w-4 h-4 animate-spin" />;
+      default: return null;
     }
   };
 
@@ -186,10 +197,7 @@ export default function EditableCustomerProfile() {
         <h1 className="text-2xl font-bold">Customer Profile</h1>
         <button
           className="flex items-center gap-2 bg-white text-blue-600 px-4 py-2 rounded hover:bg-gray-100"
-          onClick={() => {
-            if (editing) handleSave();
-            setEditing(!editing);
-          }}
+          onClick={() => { if (editing) handleSave(); setEditing(!editing); }}
         >
           {editing ? <Save className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
           {editing ? "Save Changes" : "Edit Profile"}
@@ -198,16 +206,12 @@ export default function EditableCustomerProfile() {
       </div>
 
       <div className="max-w-6xl mx-auto p-6 space-y-6">
-        {/* Editable Profile Section */}
+        {/* Profile Section */}
         <div className="bg-white rounded-lg shadow-md p-6">
           <div className="flex flex-col md:flex-row gap-6">
-            {/* Profile Image */}
             <div className="flex-shrink-0">
               <img
-                src={
-                  formData.profileImage ||
-                  `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.username}`
-                }
+                src={formData.profileImage || `https://api.dicebear.com/7.x/avataaars/svg?seed=${formData.username}`}
                 alt={formData.username}
                 className="w-32 h-32 rounded-full border-4 border-blue-500"
               />
@@ -223,106 +227,53 @@ export default function EditableCustomerProfile() {
               )}
             </div>
 
-            {/* Profile Details */}
             <div className="flex-grow">
-              <div className="mb-4">
-                <h2 className="text-3xl font-bold text-gray-800">
-                  {editing ? (
-                    <input
-                      type="text"
-                      name="username"
-                      value={formData.username}
-                      onChange={handleChange}
-                      className="text-3xl font-bold border-b border-gray-300 focus:outline-none focus:border-blue-500"
-                    />
-                  ) : (
-                    profile.username
-                  )}
-                </h2>
-                <p className="text-blue-600 font-medium flex items-center gap-2 mt-1">
-                  <User className="w-4 h-4" /> Customer
-                </p>
-              </div>
+              <h2 className="text-3xl font-bold text-gray-800 mb-2">
+                {editing ? (
+                  <input
+                    type="text"
+                    name="username"
+                    value={formData.username}
+                    onChange={handleChange}
+                    className="text-3xl font-bold border-b border-gray-300 focus:outline-none focus:border-blue-500"
+                  />
+                ) : profile.username}
+              </h2>
+              <p className="text-blue-600 font-medium flex items-center gap-2 mt-1">
+                <User className="w-4 h-4" /> Customer
+              </p>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Phone */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
                 <div className="flex items-center gap-3 text-gray-700">
                   <Phone className="w-5 h-5 text-blue-600" />
                   {editing ? (
-                    <input
-                      type="text"
-                      name="phone_no"
-                      value={formData.phone_no}
-                      onChange={handleChange}
-                      className="border-b border-gray-300 focus:outline-none focus:border-blue-500"
-                    />
-                  ) : (
-                    profile.phone_no
-                  )}
+                    <input type="text" name="phone_no" value={formData.phone_no} onChange={handleChange} className="border-b border-gray-300 focus:outline-none focus:border-blue-500" />
+                  ) : profile.phone_no}
                 </div>
-
-                {/* Email */}
                 <div className="flex items-center gap-3 text-gray-700">
                   <Mail className="w-5 h-5 text-blue-600" />
                   {editing ? (
-                    <input
-                      type="email"
-                      name="email"
-                      value={formData.email}
-                      onChange={handleChange}
-                      className="border-b border-gray-300 focus:outline-none focus:border-blue-500"
-                    />
-                  ) : (
-                    profile.email
-                  )}
+                    <input type="email" name="email" value={formData.email} onChange={handleChange} className="border-b border-gray-300 focus:outline-none focus:border-blue-500" />
+                  ) : profile.email}
                 </div>
-
-                {/* Address */}
                 <div className="flex items-start gap-3 text-gray-700 md:col-span-2">
                   <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-1" />
                   {editing ? (
-                    <input
-                      type="text"
-                      name="address"
-                      value={formData.address}
-                      onChange={handleChange}
-                      className="w-full border-b border-gray-300 focus:outline-none focus:border-blue-500"
-                    />
-                  ) : (
-                    profile.address
-                  )}
+                    <input type="text" name="address" value={formData.address} onChange={handleChange} className="w-full border-b border-gray-300 focus:outline-none focus:border-blue-500" />
+                  ) : profile.address}
                 </div>
-
-                {/* 💰 Budget */}
                 <div className="flex items-center gap-3 text-gray-700 md:col-span-2">
                   <span className="text-blue-600 font-semibold">💰</span>
                   {editing ? (
-                    <input
-                      type="number"
-                      name="budget"
-                      value={formData.budget}
-                      onChange={handleChange}
-                      className="border-b border-gray-300 focus:outline-none focus:border-blue-500 w-32"
-                      placeholder="Enter your budget"
-                    />
-                  ) : (
-                    <p className="text-gray-800">
-                      <span className="font-medium">Budget:</span> ₹{profile.budget || 0}
-                    </p>
-                  )}
+                    <input type="number" name="budget" value={formData.budget} onChange={handleChange} className="border-b border-gray-300 focus:outline-none focus:border-blue-500 w-32" />
+                  ) : <p className="text-gray-800"><span className="font-medium">Budget:</span> ₹{profile.budget || 0}</p>}
                 </div>
               </div>
 
-              {/* Bio */}
               <div className="mt-4">
                 <h3 className="font-medium text-gray-700 mb-1">Bio</h3>
                 {editing ? (
-                  <textarea
-                    name="bio"
-                    value={formData.bio}
-                    onChange={handleChange}
-                    className="w-full border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500"
-                  />
+                  <textarea name="bio" value={formData.bio} onChange={handleChange} className="w-full border border-gray-300 rounded px-2 py-1 focus:outline-none focus:border-blue-500" />
                 ) : (
                   <p className="text-gray-600">{profile.bio || "No bio provided."}</p>
                 )}
@@ -335,7 +286,6 @@ export default function EditableCustomerProfile() {
         <div className="bg-white rounded-lg shadow-md p-6">
           <h3 className="text-2xl font-bold text-gray-800 mb-4">Booking History</h3>
 
-          {/* Filter Tabs */}
           <div className="flex gap-2 mb-6 border-b">
             {["all", "Completed", "Pending", "In Progress"].map((tab) => (
               <button
@@ -356,50 +306,27 @@ export default function EditableCustomerProfile() {
             ))}
           </div>
 
-          {/* Booking Cards */}
           <div className="space-y-4">
             {filteredHistory.map((booking) => (
-              <div
-                key={booking.id}
-                className="border rounded-lg p-4 hover:shadow-md transition-shadow"
-              >
+              <div key={booking.id} className="border rounded-lg p-4 hover:shadow-md transition-shadow">
                 <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
                   <div className="flex-grow">
                     <div className="flex items-start justify-between mb-2">
                       <div>
-                        <h4 className="text-lg font-semibold text-gray-800">
-                          {booking.serviceName}
-                        </h4>
-                        <p className="text-gray-600">
-                          Provider: {booking.providerName}
-                        </p>
-                        <span className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs mt-1">
-                          {booking.category}
-                        </span>
+                        <h4 className="text-lg font-semibold text-gray-800">{booking.serviceName}</h4>
+                        <p className="text-gray-600">Provider: {booking.providerName}</p>
+                        <span className="inline-block bg-gray-100 text-gray-700 px-2 py-1 rounded text-xs mt-1">{booking.category}</span>
                       </div>
-                      <span
-                        className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(
-                          booking.status
-                        )}`}
-                      >
+                      <span className={`px-3 py-1 rounded-full text-sm font-medium flex items-center gap-1 ${getStatusColor(booking.status)}`}>
                         {getStatusIcon(booking.status)}
                         {booking.status.charAt(0).toUpperCase() + booking.status.slice(1)}
                       </span>
                     </div>
 
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
-                      <div className="flex items-center gap-1">
-                        <Calendar className="w-4 h-4" />
-                        {booking.date}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <Clock className="w-4 h-4" />
-                        {booking.time}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        <MapPin className="w-4 h-4" />
-                        {booking.address}
-                      </div>
+                      <div className="flex items-center gap-1"><Calendar className="w-4 h-4" />{booking.date}</div>
+                      <div className="flex items-center gap-1"><Clock className="w-4 h-4" />{booking.time}</div>
+                      <div className="flex items-center gap-1"><MapPin className="w-4 h-4" />{booking.address}</div>
                     </div>
 
                     {booking.rating && (
@@ -408,22 +335,25 @@ export default function EditableCustomerProfile() {
                         {[...Array(5)].map((_, i) => (
                           <Star
                             key={i}
-                            className={`w-4 h-4 ${
-                              i < booking.rating
-                                ? "fill-yellow-400 text-yellow-400"
-                                : "text-gray-300"
-                            }`}
+                            className={`w-4 h-4 ${i < booking.rating ? "fill-yellow-400 text-yellow-400" : "text-gray-300"}`}
                           />
                         ))}
-                        <span className="text-sm text-gray-600 ml-1">
-                          ({booking.rating}/5)
-                        </span>
+                        <span className="text-sm text-gray-600 ml-1">({booking.rating}/5)</span>
                       </div>
                     )}
                   </div>
 
-                  <div className="text-right md:text-left">
-                    <p className="text-2xl font-bold text-gray-800">{booking.amount}</p>
+                  <div className="flex flex-col items-end gap-2 md:items-start">
+                    {booking.status === "In Progress" && (
+                      <button
+                      className="px-3 py-1 rounded bg-green-600 text-white hover:bg-green-700"
+                      onClick={() => markCompleted(booking.id)}
+                      >
+                  Accept Booking
+                  </button>
+                  )}
+
+                  <p className="text-2xl font-bold text-gray-800">{booking.amount}</p>
                   </div>
                 </div>
               </div>

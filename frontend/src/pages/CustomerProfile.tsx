@@ -37,6 +37,8 @@ interface Profile {
   budget: number;
 }
 
+import Login from "@/components/Login";
+
 export default function EditableCustomerProfile() {
   const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -153,11 +155,11 @@ export default function EditableCustomerProfile() {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "completed":
+      case "Completed":
         return "bg-green-100 text-green-700";
-      case "pending":
+      case "Pending":
         return "bg-yellow-100 text-yellow-700";
-      case "cancelled":
+      case "In progress":
         return "bg-red-100 text-red-700";
       default:
         return "bg-gray-100 text-gray-700";
@@ -166,11 +168,11 @@ export default function EditableCustomerProfile() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case "completed":
+      case "Completed":
         return <CheckCircle className="w-4 h-4" />;
-      case "pending":
+      case "Pending":
         return <Clock className="w-4 h-4" />;
-      case "cancelled":
+      case "In Progress":
         return <XCircle className="w-4 h-4" />;
       default:
         return null;
@@ -192,6 +194,7 @@ export default function EditableCustomerProfile() {
           {editing ? <Save className="w-4 h-4" /> : <Edit className="w-4 h-4" />}
           {editing ? "Save Changes" : "Edit Profile"}
         </button>
+        <Login />
       </div>
 
       <div className="max-w-6xl mx-auto p-6 space-y-6">
@@ -334,7 +337,7 @@ export default function EditableCustomerProfile() {
 
           {/* Filter Tabs */}
           <div className="flex gap-2 mb-6 border-b">
-            {["all", "completed", "pending", "cancelled"].map((tab) => (
+            {["all", "Completed", "Pending", "In Progress"].map((tab) => (
               <button
                 key={tab}
                 onClick={() => setActiveTab(tab)}

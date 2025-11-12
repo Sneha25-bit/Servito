@@ -5,6 +5,8 @@ import dotenv from "dotenv";
 import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
 import authRoutes from "./routes/auth.routes.js";
 import providerRoutes from "./routes/provider.routes.js";
+import customerRoutes from "./routes/customer.routes.js";
+
 
 
 dotenv.config();
@@ -24,6 +26,7 @@ mongoose
 app.use("/api/requests", serviceRequestRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/provider", providerRoutes);
+app.use("/api/customer", customerRoutes);
 
 
 const PORT = process.env.PORT || 5000;

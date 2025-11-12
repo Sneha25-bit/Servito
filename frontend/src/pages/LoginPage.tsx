@@ -58,7 +58,7 @@ export default function LoginPage() {
       localStorage.setItem("token", data.token);
       localStorage.setItem("user", JSON.stringify(data.user));
 
-      navigate(loginRole === "customer" ? "/profile" : "/dashboard");
+      navigate(loginRole === "customer" ? "/user" : "/dashboard");
     } catch (err: any) {
       alert(err.response?.data?.message || "Login failed");
     }
@@ -112,7 +112,7 @@ const handleSignUp = async (e: FormEvent<HTMLFormElement>) => {
     localStorage.setItem("user", JSON.stringify(data.user));
 
     // ✅ Redirect based on role
-    navigate(role === "customer" ? "/profile" : "/dashboard");
+    navigate(role === "customer" ? "/user" : "/dashboard");
   } catch (err: any) {
     alert(err.response?.data?.message || "Signup failed");
   }

@@ -11,9 +11,8 @@ const router = express.Router();
  */
 router.post("/", requireAuth, async (req, res) => {
   try {
-    const { name, email, phone, serviceType, address, description } = req.body;
+    const { name, email, phone, serviceType, address, description, budget } = req.body;
 
-    // Attach the logged-in user's ID (decoded from token)
     const customerId = req.user.id;
 
     const newRequest = new ServiceRequest({
@@ -24,6 +23,7 @@ router.post("/", requireAuth, async (req, res) => {
       serviceType,
       address,
       description,
+      budget, // 💰 added
     });
 
     await newRequest.save();
@@ -41,6 +41,7 @@ router.post("/", requireAuth, async (req, res) => {
     });
   }
 });
+
 
 /**
  * @route   GET /api/requests

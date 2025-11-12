@@ -1,16 +1,16 @@
-import mongoose from 'mongoose';
+import mongoose from "mongoose";
 const { Schema } = mongoose;
 
 const ServiceRequestSchema = new Schema(
   {
     customer: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'Customer',
+      ref: "Customer",
       required: true,
     },
     sp: {
       type: mongoose.Schema.Types.ObjectId,
-      ref: 'SP',
+      ref: "SP",
       required: false,
     },
     name: { type: String, required: true },
@@ -19,20 +19,21 @@ const ServiceRequestSchema = new Schema(
     serviceType: { type: String, required: true },
     address: { type: String, required: true },
     description: { type: String, required: true },
+    budget: { type: Number, required: false, default: 0 }, 
     status: {
       type: String,
-      enum: ['Pending', 'Accepted', 'In Progress', 'Completed'],
-      default: 'Pending',
+      enum: ["Pending", "Accepted", "In Progress", "Completed"],
+      default: "Pending",
     },
     rating: {
       type: Number,
       min: 0,
       max: 5,
-      default: null, // or 0 if you want to default to 0
+      default: null,
     },
     createdAt: { type: Date, default: Date.now },
   },
   { timestamps: true }
 );
 
-export default mongoose.model('ServiceRequest', ServiceRequestSchema);
+export default mongoose.model("ServiceRequest", ServiceRequestSchema);

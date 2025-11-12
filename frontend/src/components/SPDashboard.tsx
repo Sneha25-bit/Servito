@@ -9,7 +9,8 @@ import {
   MapPin,
   Calendar,
   X,
-  CheckCircle
+  CheckCircle,
+  Wallet,
 } from "lucide-react";
 import "./SPDashboard.css";
 
@@ -25,6 +26,7 @@ interface ServiceRequest {
   status: "Pending" | "Accepted" | "In Progress" | "Completed";
   createdAt: string;
   updatedAt: string;
+  budget?: number; // 💰 Added budget field
 }
 
 const SPDashboard: React.FC = () => {
@@ -51,7 +53,6 @@ const SPDashboard: React.FC = () => {
     return () => clearInterval(interval);
   }, []);
 
-
   // 🔹 Update status to "In Progress" when accepted
   const handleAccept = async (requestId: string) => {
     try {
@@ -59,14 +60,11 @@ const SPDashboard: React.FC = () => {
       await axios.put(
         `http://localhost:5000/api/requests/${requestId}`,
         { status: "In Progress" },
-      {
-        headers: {
-          Authorization: `Bearer ${token}`, // ✅ include token
-    },
-  }
-);
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
 
-      // Update UI immediately
       setRequests((prev) =>
         prev.map((r) =>
           r._id === requestId ? { ...r, status: "In Progress" } : r
@@ -145,6 +143,7 @@ const SPDashboard: React.FC = () => {
 
         {activeTab === "tenders" && (
           <>
+            {/* Filter Section */}
             <div className="filter-card">
               <div className="filter-header">
                 <Filter className="icon-small" />
@@ -165,6 +164,7 @@ const SPDashboard: React.FC = () => {
               </div>
             </div>
 
+            {/* Requests Grid */}
             <div className="tenders-grid">
               {filteredRequests.length === 0 ? (
                 <p className="text-gray-500 text-center w-full">
@@ -178,8 +178,30 @@ const SPDashboard: React.FC = () => {
                         <span className="tag">{req.serviceType}</span>
                         <h3>{req.name}</h3>
                       </div>
-                      <span className="price">{req.status}</span>
+                      <span
+                        className={`price ${
+                          req.status === "Pending"
+                            ? "text-yellow-600"
+                            : req.status === "In Progress"
+                            ? "text-blue-600"
+                            : req.status === "Completed"
+                            ? "text-green-600"
+                            : "text-gray-600"
+                        }`}
+                      >
+                        {req.status}
+                      </span>
                     </div>
+
+                    {/* 💰 Budget Display */}
+                    {req.budget !== undefined && (
+                      <div className="flex items-center gap-2 mt-2 text-gray-700">
+                        <Wallet className="icon-small text-green-600" />
+                        <span className="font-semibold text-green-700">
+                          Budget: ₹{req.budget}
+                        </span>
+                      </div>
+                    )}
 
                     <div className="desc-space"></div>
 
@@ -197,7 +219,6 @@ const SPDashboard: React.FC = () => {
                     </div>
 
                     <div className="card-actions">
-                      {/* 🔹 Only show button if status is Pending */}
                       {req.status === "Pending" && (
                         <button
                           onClick={() => handleAccept(req._id)}
@@ -240,6 +261,14 @@ const SPDashboard: React.FC = () => {
             <p><strong>Phone:</strong> {selectedRequest.phone}</p>
             <p><strong>Address:</strong> {selectedRequest.address}</p>
             <p><strong>Description:</strong> {selectedRequest.description}</p>
+
+            {/* 💰 Show Budget in Modal */}
+            {selectedRequest.budget !== undefined && (
+              <p className="mt-2 text-green-700 font-medium">
+                <strong>Budget:</strong> ₹{selectedRequest.budget}
+              </p>
+            )}
+
             <button
               className="w-full py-3 bg-sky-600 hover:bg-sky-700 text-white rounded-xl font-semibold transition mt-4"
               onClick={() => setSelectedRequest(null)}

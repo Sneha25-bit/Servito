@@ -15,23 +15,34 @@ import {
 } from "lucide-react";
 
 interface Booking {
-  _id: string;
-  serviceType: string;
-  name: string;
-  email: string;
-  phone: string;
-  address: string;
-  description: string;
+  id: string;
+  serviceName: string;
+  providerName: string;
+  category: string;
+  date: string;
+  time: string;
   status: string;
-  createdAt: string;
+  amount: string | number;
+  rating: number | null;
+  address: string;
+}
+
+interface Profile {
+  username: string;
+  email: string;
+  phone_no: string;
+  address: string;
+  bio: string;
+  profileImage: string;
+  budget: number;
 }
 
 export default function EditableCustomerProfile() {
-  const [profile, setProfile] = useState(null);
+  const [profile, setProfile] = useState<Profile | null>(null);
   const [loading, setLoading] = useState(true);
   const [editing, setEditing] = useState(false);
-  const [formData, setFormData] = useState({});
-  const [bookingHistory, setBookingHistory] = useState([]);
+  const [formData, setFormData] = useState<Partial<Profile>>({});
+  const [bookingHistory, setBookingHistory] = useState<Booking[]>([]);
   const [activeTab, setActiveTab] = useState("all");
 
   // Fetch profile and bookings
@@ -50,10 +61,11 @@ export default function EditableCustomerProfile() {
           address: res.data.address || "",
           bio: res.data.bio || "",
           profileImage: res.data.profileImage || "",
+          budget: res.data.budget || 0,
         });
-        setLoading(false);
       } catch (err) {
-        console.error(err);
+        console.error("Error fetching profile:", err);
+      } finally {
         setLoading(false);
       }
     };
@@ -70,14 +82,16 @@ export default function EditableCustomerProfile() {
           headers: { Authorization: `Bearer ${token}` },
         });
 
-        // Map the backend response to your frontend structure if needed
-        const formatted = res.data.data.map((req: any, index: number) => ({
+        const formatted = res.data.data.map((req: any) => ({
           id: req._id,
           serviceName: req.serviceType,
           providerName: req.providerName || "Assigned soon",
           category: req.serviceType,
           date: new Date(req.createdAt).toLocaleDateString(),
-          time: new Date(req.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }),
+          time: new Date(req.createdAt).toLocaleTimeString([], {
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
           status: req.status,
           amount: req.amount || "—",
           rating: req.rating ?? null,
@@ -86,7 +100,7 @@ export default function EditableCustomerProfile() {
 
         setBookingHistory(formatted);
       } catch (err) {
-        console.error(" Error fetching bookings:", err);
+        console.error("Error fetching bookings:", err);
         alert("Failed to load booking history.");
       }
     };
@@ -98,49 +112,46 @@ export default function EditableCustomerProfile() {
   if (loading) return <p className="text-gray-500">Loading profile...</p>;
   if (!profile) return <p className="text-red-500">Failed to load profile</p>;
 
-  const handleChange = (e) => {
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     const { name, value } = e.target;
     setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
   const handleSave = async () => {
-  try {
-    const token = localStorage.getItem("token");
+    try {
+      const token = localStorage.getItem("token");
 
-    // 1. Update profile
-    await axios.put(
-      "http://localhost:5000/api/customer/profile",
-      formData,
-      { headers: { Authorization: `Bearer ${token}` } }
-    );
+      await axios.put("http://localhost:5000/api/customer/profile", formData, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    // 2. Refetch profile from backend to get latest data
-    const res = await axios.get("http://localhost:5000/api/customer/profile", {
-      headers: { Authorization: `Bearer ${token}` },
-    });
+      const res = await axios.get("http://localhost:5000/api/customer/profile", {
+        headers: { Authorization: `Bearer ${token}` },
+      });
 
-    // 3. Update state with fresh profile
-    setProfile(res.data);
-    setFormData({
-      username: res.data.username || "",
-      email: res.data.email || "",
-      phone_no: res.data.phone_no || "",
-      address: res.data.address || "",
-      bio: res.data.bio || "",
-      profileImage: res.data.profileImage || "",
-    });
+      setProfile(res.data);
+      setFormData({
+        username: res.data.username || "",
+        email: res.data.email || "",
+        phone_no: res.data.phone_no || "",
+        address: res.data.address || "",
+        bio: res.data.bio || "",
+        profileImage: res.data.profileImage || "",
+        budget: res.data.budget || 0,
+      });
 
-    setEditing(false); // Exit editing mode
-  } catch (err) {
-    console.error("Error updating profile:", err);
-  }
-};
+      setEditing(false);
+    } catch (err) {
+      console.error("Error updating profile:", err);
+    }
+  };
+
   const filteredHistory =
     activeTab === "all"
       ? bookingHistory
       : bookingHistory.filter((b) => b.status === activeTab);
 
-  const getStatusColor = (status) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
       case "completed":
         return "bg-green-100 text-green-700";
@@ -153,7 +164,7 @@ export default function EditableCustomerProfile() {
     }
   };
 
-  const getStatusIcon = (status) => {
+  const getStatusIcon = (status: string) => {
     switch (status) {
       case "completed":
         return <CheckCircle className="w-4 h-4" />;
@@ -231,6 +242,7 @@ export default function EditableCustomerProfile() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {/* Phone */}
                 <div className="flex items-center gap-3 text-gray-700">
                   <Phone className="w-5 h-5 text-blue-600" />
                   {editing ? (
@@ -245,6 +257,8 @@ export default function EditableCustomerProfile() {
                     profile.phone_no
                   )}
                 </div>
+
+                {/* Email */}
                 <div className="flex items-center gap-3 text-gray-700">
                   <Mail className="w-5 h-5 text-blue-600" />
                   {editing ? (
@@ -259,6 +273,8 @@ export default function EditableCustomerProfile() {
                     profile.email
                   )}
                 </div>
+
+                {/* Address */}
                 <div className="flex items-start gap-3 text-gray-700 md:col-span-2">
                   <MapPin className="w-5 h-5 text-blue-600 flex-shrink-0 mt-1" />
                   {editing ? (
@@ -271,6 +287,25 @@ export default function EditableCustomerProfile() {
                     />
                   ) : (
                     profile.address
+                  )}
+                </div>
+
+                {/* 💰 Budget */}
+                <div className="flex items-center gap-3 text-gray-700 md:col-span-2">
+                  <span className="text-blue-600 font-semibold">💰</span>
+                  {editing ? (
+                    <input
+                      type="number"
+                      name="budget"
+                      value={formData.budget}
+                      onChange={handleChange}
+                      className="border-b border-gray-300 focus:outline-none focus:border-blue-500 w-32"
+                      placeholder="Enter your budget"
+                    />
+                  ) : (
+                    <p className="text-gray-800">
+                      <span className="font-medium">Budget:</span> ₹{profile.budget || 0}
+                    </p>
                   )}
                 </div>
               </div>
@@ -352,11 +387,7 @@ export default function EditableCustomerProfile() {
                     <div className="flex flex-wrap gap-4 text-sm text-gray-600 mt-2">
                       <div className="flex items-center gap-1">
                         <Calendar className="w-4 h-4" />
-                        {new Date(booking.date).toLocaleDateString("en-IN", {
-                          day: "numeric",
-                          month: "short",
-                          year: "numeric",
-                        })}
+                        {booking.date}
                       </div>
                       <div className="flex items-center gap-1">
                         <Clock className="w-4 h-4" />
@@ -381,7 +412,9 @@ export default function EditableCustomerProfile() {
                             }`}
                           />
                         ))}
-                        <span className="text-sm text-gray-600 ml-1">({booking.rating}/5)</span>
+                        <span className="text-sm text-gray-600 ml-1">
+                          ({booking.rating}/5)
+                        </span>
                       </div>
                     )}
                   </div>
